@@ -8,4 +8,9 @@ Install:
 cp -r . ~/.patapim/plugins/hello-world
 ```
 
-Then in PATAPIM: **Preferences → Local API → PATAPIM plugins → enable "hello-world"**. Any Claude Code session inside PATAPIM now has `plugin_hello_world_echo` and `plugin_hello_world_count_terminals` tools.
+Then in PATAPIM: **Preferences → Local API → PATAPIM plugins → enable "hello-world"**.
+
+What it demonstrates:
+- **MCP tools** — any Claude Code session inside PATAPIM gets `plugin_hello_world_echo` and `plugin_hello_world_count_terminals`.
+- **`commands`** — the plugin card shows "Say hello" and "Count terminals" buttons that dispatch to the plugin process.
+- **`instructionBlocks`** — a note about the plugin is injected into your AI memory files while it's enabled, and removed when you disable it.

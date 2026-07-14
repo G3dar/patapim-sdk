@@ -26,6 +26,31 @@ PATAPIM plugins are folders in `~/.patapim/plugins/<name>/` that run **out-of-pr
 - `name` must equal the folder name (lowercase letters, digits, `-`, `_`).
 - `permissions` are [Local API scopes](authentication.md) — exactly what the plugin's token will carry. The user approves them when enabling the plugin (browser-extension style). If an update requests new scopes, the plugin won't start until the user re-grants.
 
+## Contributions (`contributes`)
+
+Declarative entries in `plugin.json` that PATAPIM applies on your behalf — no code needed for these:
+
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "main": "index.js",
+  "permissions": ["terminals:read"],
+  "contributes": {
+    "instructionBlocks": [
+      { "text": "This project uses pnpm, not npm." },
+      { "file": "context.md" }
+    ],
+    "commands": [
+      { "id": "sync", "title": "Sync now" }
+    ]
+  }
+}
+```
+
+- **`instructionBlocks`** — text injected into every AI CLI's memory file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`) inside a per-plugin marker while the plugin is enabled, and stripped cleanly when disabled. Use `{ text }` for inline content or `{ file }` for a path relative to the plugin folder. This is how a plugin adds standing context or skills to every Claude/Codex/Gemini session — no tokens spent per call, and the user sees exactly what's injected in the enable prompt.
+- **`commands`** — named actions (`{ id, title }`) shown as buttons on the plugin's card in **Preferences → Local API**. Clicking one dispatches to the handler you register in `activate` (see `registerCommand` below).
+
 ## Entry module
 
 ```js
@@ -57,7 +82,7 @@ module.exports.deactivate = async () => { /* optional cleanup */ };
 | `get/post/patch/delete(path, …)` | Local API request, path relative to `/api/v1` (e.g. `'/terminals'`) — same surface as the [SDK/OpenAPI spec](../openapi/openapi.json) |
 | `notify(text, terminalId?)` | Send a notification (scope: `notifications`) |
 | `registerMcpTool(def, handler)` | Register an MCP tool (call during `activate`) — `def = { name, description, inputSchema }` |
-| `registerCommand(id, handler)` | Register a command invocable by PATAPIM (toolbar buttons — coming) |
+| `registerCommand(id, handler)` | Register the handler for a `contributes.commands` entry — invoked when the user clicks its button. `handler(args)` may be async; its return value is shown to the user |
 | `events(topics)` | WebSocket event stream → `{ on(topic, cb), close() }` |
 | `name`, `dir`, `log(…)` | Plugin identity + logging (shows in PATAPIM's main log as `[PluginHost] [name]`) |
 

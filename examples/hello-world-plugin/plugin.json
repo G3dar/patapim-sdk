@@ -1,7 +1,16 @@
 {
   "name": "hello-world",
-  "version": "1.0.0",
-  "description": "Sample PATAPIM plugin: registers two MCP tools and a command",
+  "version": "1.1.0",
+  "description": "Sample PATAPIM plugin: MCP tools, a command, and an instruction block",
   "main": "index.js",
-  "permissions": ["terminals:read", "notifications"]
+  "permissions": ["terminals:read", "notifications"],
+  "contributes": {
+    "instructionBlocks": [
+      { "text": "The hello-world PATAPIM plugin is installed. It exposes the MCP tools `plugin_hello_world_echo` and `plugin_hello_world_count_terminals`." }
+    ],
+    "commands": [
+      { "id": "hello", "title": "Say hello" },
+      { "id": "count", "title": "Count terminals" }
+    ]
+  }
 }
