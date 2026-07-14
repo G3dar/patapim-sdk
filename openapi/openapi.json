@@ -1,0 +1,1281 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PATAPIM Local API",
+    "version": "1.0",
+    "description": "Local HTTP+WS API served by the PATAPIM desktop app on http://127.0.0.1:31415. Authenticate with a scoped token created in PATAPIM Preferences → Developer → Local API, passed via the `x-patapim-token` header (or `Authorization: Bearer`). v1 is additive-only: routes, parameters and response fields are never removed or renamed.\n\nApp version: 1.5.10"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:31415"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "patapimToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-patapim-token"
+      }
+    }
+  },
+  "x-scopes": {
+    "terminals:read": "List terminals and read their buffers/state",
+    "terminals:write": "Create terminals, send input, resize, close",
+    "tasks": "Read and manage project tasks and scheduled commands",
+    "notifications": "Send notifications through the user's configured channels",
+    "browser": "Drive the embedded browser (navigate, click, screenshot)",
+    "files:read": "Read files in project directories",
+    "files:write": "Write files in project directories",
+    "events": "Subscribe to the WebSocket event stream"
+  },
+  "paths": {
+    "/api/v1/terminals": {
+      "get": {
+        "summary": "List all terminals with live state (processing, attention, plan mode)",
+        "operationId": "getTerminals",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "terminals:read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"terminals:read\" (code: MISSING_SCOPE)"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a terminal. Subject to the plan's terminal limit.",
+        "operationId": "postTerminals",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "terminals:write",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"terminals:write\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cwd": {
+                    "type": "string",
+                    "description": "string?"
+                  },
+                  "projectPath": {
+                    "type": "string",
+                    "description": "string?"
+                  },
+                  "shell": {
+                    "type": "string",
+                    "description": "string?"
+                  },
+                  "cols": {
+                    "type": "number",
+                    "description": "number?"
+                  },
+                  "rows": {
+                    "type": "number",
+                    "description": "number?"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/terminals/{id}": {
+      "get": {
+        "summary": "Get one terminal's info",
+        "operationId": "getTerminalsId",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "terminals:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Terminal id (term-3) or numeric shorthand (3)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"terminals:read\" (code: MISSING_SCOPE)"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Close a terminal",
+        "operationId": "deleteTerminalsId",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "terminals:write",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Terminal id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"terminals:write\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/terminals/{id}/buffer": {
+      "get": {
+        "summary": "Read the terminal's screen buffer",
+        "operationId": "getTerminalsIdBuffer",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "terminals:read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Terminal id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastLines",
+            "in": "query",
+            "required": false,
+            "description": "only the last N lines",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"terminals:read\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/terminals/{id}/write": {
+      "post": {
+        "summary": "Send input to a terminal (e.g. a prompt for the AI CLI)",
+        "operationId": "postTerminalsIdWrite",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "terminals:write",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Terminal id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"terminals:write\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "string",
+                    "description": "text to type"
+                  },
+                  "pressEnter": {
+                    "type": "boolean",
+                    "description": "press Enter after typing"
+                  }
+                },
+                "required": [
+                  "data"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/terminals/{id}/resize": {
+      "post": {
+        "summary": "Resize a terminal",
+        "operationId": "postTerminalsIdResize",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "terminals:write",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Terminal id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"terminals:write\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cols": {
+                    "type": "number",
+                    "description": "number"
+                  },
+                  "rows": {
+                    "type": "number",
+                    "description": "number"
+                  }
+                },
+                "required": [
+                  "cols",
+                  "rows"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "summary": "List a project's tasks",
+        "operationId": "getTasks",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "tasks",
+        "parameters": [
+          {
+            "name": "projectPath",
+            "in": "query",
+            "required": true,
+            "description": "absolute project path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"tasks\" (code: MISSING_SCOPE)"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a task in a project",
+        "operationId": "postTasks",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "tasks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"tasks\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "projectPath": {
+                    "type": "string",
+                    "description": "string"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "string"
+                  }
+                },
+                "required": [
+                  "projectPath",
+                  "text"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{id}": {
+      "patch": {
+        "summary": "Update a task's status",
+        "operationId": "patchTasksId",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "tasks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Task id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"tasks\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "projectPath": {
+                    "type": "string",
+                    "description": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "pending | in_progress | ready_to_test | completed"
+                  }
+                },
+                "required": [
+                  "projectPath",
+                  "status"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a task",
+        "operationId": "deleteTasksId",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "tasks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Task id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectPath",
+            "in": "query",
+            "required": true,
+            "description": "string",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"tasks\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/scheduled-commands": {
+      "post": {
+        "summary": "Schedule a one-shot command into a terminal at a future time",
+        "operationId": "postScheduledCommands",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "tasks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"tasks\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "description": "string"
+                  },
+                  "executeAt": {
+                    "type": "string",
+                    "description": "ISO datetime (future)"
+                  },
+                  "targetTerminalId": {
+                    "type": "string",
+                    "description": "string?"
+                  }
+                },
+                "required": [
+                  "command",
+                  "executeAt"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "post": {
+        "summary": "Send a notification through the user's configured channel (Telegram)",
+        "operationId": "postNotifications",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "notifications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"notifications\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "string"
+                  },
+                  "terminalId": {
+                    "type": "string",
+                    "description": "bind replies back to this terminal"
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/navigate": {
+      "post": {
+        "summary": "Open a URL in the embedded browser",
+        "operationId": "postBrowserNavigate",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "string"
+                  },
+                  "terminalId": {
+                    "type": "string",
+                    "description": "string?"
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/screenshot": {
+      "post": {
+        "summary": "Screenshot the embedded browser (base64 PNG)",
+        "operationId": "postBrowserScreenshot",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/browser/click": {
+      "post": {
+        "summary": "Click an element by CSS selector or visible text",
+        "operationId": "postBrowserClick",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "selector": {
+                    "type": "string",
+                    "description": "string?"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "string?"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/fill": {
+      "post": {
+        "summary": "Fill an input or textarea",
+        "operationId": "postBrowserFill",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "selector": {
+                    "type": "string",
+                    "description": "string"
+                  },
+                  "value": {
+                    "type": "string",
+                    "description": "string"
+                  }
+                },
+                "required": [
+                  "selector",
+                  "value"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/type": {
+      "post": {
+        "summary": "Type text with key events",
+        "operationId": "postBrowserType",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "string"
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/press-key": {
+      "post": {
+        "summary": "Press a keyboard key",
+        "operationId": "postBrowserPressKey",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "string"
+                  }
+                },
+                "required": [
+                  "key"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/scroll": {
+      "post": {
+        "summary": "Scroll the page",
+        "operationId": "postBrowserScroll",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dy": {
+                    "type": "number",
+                    "description": "number?"
+                  },
+                  "selector": {
+                    "type": "string",
+                    "description": "string?"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/wait": {
+      "post": {
+        "summary": "Wait for an element/text to appear",
+        "operationId": "postBrowserWait",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "selector": {
+                    "type": "string",
+                    "description": "string?"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "string?"
+                  },
+                  "timeoutMs": {
+                    "type": "number",
+                    "description": "number?"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/browser/back": {
+      "post": {
+        "summary": "Navigate back",
+        "operationId": "postBrowserBack",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/browser/forward": {
+      "post": {
+        "summary": "Navigate forward",
+        "operationId": "postBrowserForward",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/browser/refresh": {
+      "post": {
+        "summary": "Reload the page",
+        "operationId": "postBrowserRefresh",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/browser/content": {
+      "get": {
+        "summary": "Get the page text or HTML",
+        "operationId": "getBrowserContent",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": true,
+            "description": "\"text\" | \"html\"",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "text",
+                "html"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/browser/info": {
+      "get": {
+        "summary": "Current URL and page title",
+        "operationId": "getBrowserInfo",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/browser/status": {
+      "get": {
+        "summary": "Browser panel status",
+        "operationId": "getBrowserStatus",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/browser/list": {
+      "get": {
+        "summary": "List open browser sessions",
+        "operationId": "getBrowserList",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "browser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"browser\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/files/tree": {
+      "get": {
+        "summary": "Directory tree of a project",
+        "operationId": "getFilesTree",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "files:read",
+        "parameters": [
+          {
+            "name": "projectPath",
+            "in": "query",
+            "required": true,
+            "description": "string",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "description": "number?",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"files:read\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/files/read": {
+      "get": {
+        "summary": "Read a file",
+        "operationId": "getFilesRead",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "files:read",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "absolute file path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"files:read\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/files/write": {
+      "post": {
+        "summary": "Write a file",
+        "operationId": "postFilesWrite",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "files:write",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"files:write\" (code: MISSING_SCOPE)"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "string"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "string"
+                  }
+                },
+                "required": [
+                  "path",
+                  "content"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meta": {
+      "get": {
+        "summary": "API metadata: app version, API version, the calling token's scopes, available capabilities",
+        "operationId": "getMeta",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid token or API disabled"
+          }
+        }
+      }
+    }
+  }
+}

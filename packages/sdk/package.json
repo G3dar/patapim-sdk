@@ -1,0 +1,25 @@
+{
+  "name": "@patapim/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript client for the PATAPIM Local API (HTTP + WebSocket events)",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/G3dar/patapim-sdk.git",
+    "directory": "packages/sdk"
+  },
+  "keywords": ["patapim", "claude-code", "ai", "terminal", "automation", "sdk"]
+}
