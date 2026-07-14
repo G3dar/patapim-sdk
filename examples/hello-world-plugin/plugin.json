@@ -1,0 +1,7 @@
+{
+  "name": "hello-world",
+  "version": "1.0.0",
+  "description": "Sample PATAPIM plugin: registers two MCP tools and a command",
+  "main": "index.js",
+  "permissions": ["terminals:read", "notifications"]
+}

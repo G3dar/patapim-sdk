@@ -41,7 +41,9 @@ events.on('notifications', (e) => console.log('terminal needs attention:', e.ter
 - **Dashboards & monitors** — live terminal state (processing / plan mode / attention) over HTTP
 - **Browser automation** — drive PATAPIM's embedded browser (navigate, click, fill, screenshot)
 
-A full in-app **plugin system** (manifest + permissions + UI contributions + custom MCP tools) is the next phase — the token scopes you see here are its permission model. Watch this repo.
+## Plugins
+
+PATAPIM also has an **in-app plugin system**: drop a folder into `~/.patapim/plugins/<name>/` with a `plugin.json` manifest, enable it in Preferences (you approve its permissions, browser-extension style), and it runs isolated with a scoped token. Plugins can **register MCP tools that appear in every Claude Code / Codex session automatically**. Start here: [docs/plugins.md](docs/plugins.md) · [examples/hello-world-plugin](examples/hello-world-plugin).
 
 ## Versioning promise
 
