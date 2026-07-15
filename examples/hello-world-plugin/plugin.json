@@ -1,7 +1,7 @@
 {
   "name": "hello-world",
-  "version": "1.1.0",
-  "description": "Sample PATAPIM plugin: MCP tools, a command, and an instruction block",
+  "version": "1.2.0",
+  "description": "Sample PATAPIM plugin: MCP tools, commands, a toolbar button, and an instruction block",
   "main": "index.js",
   "permissions": ["terminals:read", "notifications"],
   "contributes": {
@@ -11,6 +11,9 @@
     "commands": [
       { "id": "hello", "title": "Say hello" },
       { "id": "count", "title": "Count terminals" }
+    ],
+    "toolbarButtons": [
+      { "command": "count", "tooltip": "Count open terminals", "icon": "🔢" }
     ]
   }
 }

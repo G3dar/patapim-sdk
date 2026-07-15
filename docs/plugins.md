@@ -43,6 +43,9 @@ Declarative entries in `plugin.json` that PATAPIM applies on your behalf — no 
     ],
     "commands": [
       { "id": "sync", "title": "Sync now" }
+    ],
+    "toolbarButtons": [
+      { "command": "sync", "tooltip": "Sync now", "icon": "🔄" }
     ]
   }
 }
@@ -50,6 +53,7 @@ Declarative entries in `plugin.json` that PATAPIM applies on your behalf — no 
 
 - **`instructionBlocks`** — text injected into every AI CLI's memory file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`) inside a per-plugin marker while the plugin is enabled, and stripped cleanly when disabled. Use `{ text }` for inline content or `{ file }` for a path relative to the plugin folder. This is how a plugin adds standing context or skills to every Claude/Codex/Gemini session — no tokens spent per call, and the user sees exactly what's injected in the enable prompt.
 - **`commands`** — named actions (`{ id, title }`) shown as buttons on the plugin's card in **Preferences → Local API**. Clicking one dispatches to the handler you register in `activate` (see `registerCommand` below).
+- **`toolbarButtons`** — put a command one click away in the main terminal toolbar, next to the built-in AI buttons. Each `{ command, tooltip, icon }` references a `commands` entry; `icon` is a single emoji. Buttons appear only while the plugin is running.
 
 ## Entry module
 
