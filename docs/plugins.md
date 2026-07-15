@@ -53,6 +53,37 @@ Declarative entries in `plugin.json` that PATAPIM applies on your behalf — no 
 
 - **`instructionBlocks`** — text injected into every AI CLI's memory file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`) inside a per-plugin marker while the plugin is enabled, and stripped cleanly when disabled. Use `{ text }` for inline content or `{ file }` for a path relative to the plugin folder. This is how a plugin adds standing context or skills to every Claude/Codex/Gemini session — no tokens spent per call, and the user sees exactly what's injected in the enable prompt.
 - **`commands`** — named actions (`{ id, title }`) shown as buttons on the plugin's card in **Preferences → Local API**. Clicking one dispatches to the handler you register in `activate` (see `registerCommand` below).
+- **`toolbarButtons`** — `{ command, tooltip, icon }` buttons rendered in the terminal toolbar next to the AI-launch buttons. `icon` is an emoji; clicking runs the referenced `command`.
+- **`panels`** — `{ id, title, entry, width?, height? }` sandboxed windows that load your own HTML/JS/CSS (shipped in the plugin folder; `entry` defaults to `index.html`). Opened from a button on the plugin's card. See **Panels** below.
+
+## Panels
+
+A panel is a plugin-authored UI shown in a sandboxed window. Ship the HTML/JS/CSS in your plugin folder and declare it:
+
+```json
+"contributes": {
+  "panels": [{ "id": "main", "title": "My Panel", "entry": "panel.html", "width": 460, "height": 420 }]
+}
+```
+
+The panel page runs with a **strict CSP** (`default-src 'none'; script-src 'self'; connect-src 'none'; …`) — no inline scripts, no outbound network. Its only capability is `window.patapimPlugin`, injected by PATAPIM:
+
+```js
+// panel.js (loaded via <script src="panel.js"> — inline scripts are blocked by CSP)
+const info = await window.patapimPlugin.info();          // { pluginName, panelId, scopes }
+const { terminals } = await window.patapimPlugin.get('/terminals');   // scoped Local API call
+await window.patapimPlugin.notify('done!');              // scope: notifications
+window.patapimPlugin.close();                            // close the panel window
+```
+
+| `window.patapimPlugin` | |
+|---|---|
+| `get/post/patch/delete(path, …)` | Local API call, path relative to `/api/v1`. Authorized by the plugin's granted scopes (a missing scope rejects with `code: 'MISSING_SCOPE'`) |
+| `notify(text)` | Send a notification (scope: `notifications`) |
+| `info()` | `{ pluginName, panelId, scopes }` |
+| `close()` | Close the panel window |
+
+**Security:** the panel never holds a token — every `patapimPlugin.*` call goes through an IPC bridge and PATAPIM injects the plugin's scoped token in the main process. A panel can do exactly what its plugin's permissions allow, nothing more. Content is served over the local server with a path-traversal guard; only files inside your plugin folder are reachable. A minimal working panel is in [examples/hello-world-plugin](../examples/hello-world-plugin) (`panel.html` + `panel.js`).
 - **`toolbarButtons`** — put a command one click away in the main terminal toolbar, next to the built-in AI buttons. Each `{ command, tooltip, icon }` references a `commands` entry; `icon` is a single emoji. Buttons appear only while the plugin is running.
 
 ## Entry module

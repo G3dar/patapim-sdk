@@ -96,12 +96,40 @@ const patapim = {
     const ws = new WebSocket(wsUrl);
     const listeners = new Map();
     await new Promise((resolve, reject) => {
-      ws.addEventListener('error', reject);
+      // Never hang forever: a token without the "events" scope is rejected with
+      // a plain {type:'welcome'} (not a failing auth_result), so without this
+      // guard the promise — and the plugin's activate() — would never settle.
+      const timer = setTimeout(() => {
+        try { ws.close(); } catch {}
+        reject(new Error('event stream did not authenticate within 10s — does the token have the "events" permission?'));
+      }, 10000);
+      const settleReject = (err) => { clearTimeout(timer); reject(err); };
+      const settleResolve = () => { clearTimeout(timer); resolve(); };
+
+      ws.addEventListener('error', settleReject);
+      ws.addEventListener('close', () => settleReject(new Error('event stream closed before it authenticated (missing "events" permission?)')));
       ws.addEventListener('message', (e) => {
         let msg; try { msg = JSON.parse(String(e.data)); } catch { return; }
         if (msg.type === 'auth_result' && msg.success) ws.send(JSON.stringify({ type: 'subscribe', topics }));
-        else if (msg.type === 'auth_result') reject(new Error('event stream auth failed — missing "events" permission?'));
-        else if (msg.type === 'subscribed') resolve();
+        else if (msg.type === 'auth_result') settleReject(new Error('event stream auth failed — missing "events" permission?'));
+        // The server accepts a WS lacking the events scope by replying 'welcome'
+        // (the normal remote-UI handshake) rather than a failing auth_result.
+        else if (msg.type === 'welcome') settleReject(new Error('event stream rejected — token is missing the "events" permission'));
+        else if (msg.type === 'subscribed') {
+          const rejected = Array.isArray(msg.rejected) ? msg.rejected : [];
+          const accepted = Array.isArray(msg.topics) ? msg.topics : [];
+          if (rejected.length) {
+            const detail = rejected.map(r => `${r.topic} (${r.reason}${r.requiredScope ? ': ' + r.requiredScope : ''})`).join(', ');
+            if (accepted.length === 0) {
+              // Every topic bounced — the subscription is dead; fail loudly
+              // instead of resolving into a silently-never-firing stream.
+              settleReject(new Error(`event subscription rejected: ${detail}. Add the required permission(s) to plugin.json.`));
+              return;
+            }
+            console.error(`[patapim plugin events] some topics rejected: ${detail}`);
+          }
+          settleResolve();
+        }
         else if (msg.type === 'event') {
           for (const cb of listeners.get(msg.topic) || []) { try { cb(msg); } catch (err) { console.error(err); } }
           for (const cb of listeners.get('*') || []) { try { cb(msg); } catch (err) { console.error(err); } }
