@@ -53,6 +53,14 @@ Declarative entries in `plugin.json` that PATAPIM applies on your behalf — no 
 
 - **`instructionBlocks`** — text injected into every AI CLI's memory file (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`) inside a per-plugin marker while the plugin is enabled, and stripped cleanly when disabled. Use `{ text }` for inline content or `{ file }` for a path relative to the plugin folder. This is how a plugin adds standing context or skills to every Claude/Codex/Gemini session — no tokens spent per call, and the user sees exactly what's injected in the enable prompt.
 - **`commands`** — named actions (`{ id, title }`) shown as buttons on the plugin's card in **Preferences → Local API**. Clicking one dispatches to the handler you register in `activate` (see `registerCommand` below).
+- **`scheduledTasks`** — `{ command, cron }` entries that fire one of your registered commands on a schedule while the plugin is enabled (standard 5-field cron, e.g. `"*/30 * * * *"`). The handler receives `{ scheduled: true }`. Timers run only while the plugin process is alive and are cleaned up automatically on disable/crash:
+
+```json
+"contributes": {
+  "commands": [{ "id": "sync", "title": "Sync now" }],
+  "scheduledTasks": [{ "command": "sync", "cron": "*/30 * * * *" }]
+}
+```
 - **`toolbarButtons`** — `{ command, tooltip, icon }` buttons rendered in the terminal toolbar next to the AI-launch buttons. `icon` is an emoji; clicking runs the referenced `command`.
 - **`panels`** — `{ id, title, entry, width?, height? }` sandboxed windows that load your own HTML/JS/CSS (shipped in the plugin folder; `entry` defaults to `index.html`). Opened from a button on the plugin's card. See **Panels** below.
 
