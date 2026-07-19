@@ -3,7 +3,7 @@
   "info": {
     "title": "PATAPIM Local API",
     "version": "1.0",
-    "description": "Local HTTP+WS API served by the PATAPIM desktop app on http://127.0.0.1:31415. Authenticate with a scoped token created in PATAPIM Preferences → Developer → Local API, passed via the `x-patapim-token` header (or `Authorization: Bearer`). v1 is additive-only: routes, parameters and response fields are never removed or renamed.\n\nApp version: 1.5.12"
+    "description": "Local HTTP+WS API served by the PATAPIM desktop app on http://127.0.0.1:31415. Authenticate with a scoped token created in PATAPIM Preferences → Developer → Local API, passed via the `x-patapim-token` header (or `Authorization: Bearer`). v1 is additive-only: routes, parameters and response fields are never removed or renamed.\n\nApp version: 1.5.13"
   },
   "servers": [
     {
