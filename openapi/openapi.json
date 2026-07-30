@@ -3,7 +3,7 @@
   "info": {
     "title": "PATAPIM Local API",
     "version": "1.0",
-    "description": "Local HTTP+WS API served by the PATAPIM desktop app on http://127.0.0.1:31415. Authenticate with a scoped token created in PATAPIM Preferences → Developer → Local API, passed via the `x-patapim-token` header (or `Authorization: Bearer`). v1 is additive-only: routes, parameters and response fields are never removed or renamed.\n\nApp version: 1.5.15"
+    "description": "Local HTTP+WS API served by the PATAPIM desktop app on http://127.0.0.1:31415. Authenticate with a scoped token created in PATAPIM Preferences → Developer → Local API, passed via the `x-patapim-token` header (or `Authorization: Bearer`). v1 is additive-only: routes, parameters and response fields are never removed or renamed.\n\nApp version: 1.5.16"
   },
   "servers": [
     {
@@ -550,7 +550,7 @@
                   },
                   "targetTerminalId": {
                     "type": "string",
-                    "description": "string?"
+                    "description": "terminal id, numeric shorthand, or \"self\""
                   }
                 },
                 "required": [
@@ -559,6 +559,72 @@
                 ]
               }
             }
+          }
+        }
+      },
+      "get": {
+        "summary": "List everything scheduled: one-shot commands, cron tasks and running loops",
+        "operationId": "getScheduledCommands",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "tasks",
+        "parameters": [
+          {
+            "name": "includeDone",
+            "in": "query",
+            "required": false,
+            "description": "also return already fired/failed one-shot commands",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"tasks\" (code: MISSING_SCOPE)"
+          }
+        }
+      }
+    },
+    "/api/v1/scheduled-commands/{id}": {
+      "delete": {
+        "summary": "Cancel a scheduled command (cmd-*), cron task (sched-*) or running loop (loop-*)",
+        "operationId": "deleteScheduledCommandsId",
+        "security": [
+          {
+            "patapimToken": []
+          }
+        ],
+        "x-required-scope": "tasks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Scheduled item id — or a terminal id to cancel that terminal's pending command",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Invalid or missing token, or Local API disabled (code: INVALID_TOKEN | API_DISABLED)"
+          },
+          "403": {
+            "description": "Token lacks the required scope \"tasks\" (code: MISSING_SCOPE)"
           }
         }
       }
